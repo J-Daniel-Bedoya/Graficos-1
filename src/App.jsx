@@ -1,10 +1,12 @@
 import React, { useState } from "react";
 import ChartComponent from "./start/ChartComponent";
 import Add from "./start/Add";
+// import PercentageList from "./start/PercentageList";
 
 function App() {
   const [data, setData] = useState([{ time: "2024-05-01", value: 1.2 }]);
   const [lastDate, setLastDate] = useState(new Date(2024, 4, 1)); // Mes 4 es mayo
+  const [lastValue, setLastValue] = useState(1.2); // Inicializa con el valor inicial
 
   const handleNewPercentage = (percentage) => {
     const numericValue = parseFloat(percentage);
@@ -20,9 +22,18 @@ function App() {
       const day = String(newDate.getDate()).padStart(2, "0");
       const formattedDate = `${year}-${month}-${day}`;
 
+      // Calcular el nuevo valor basado en la tendencia limitada
+      let newValue;
+      if (numericValue >= 2) {
+        newValue = lastValue + 2; // Incrementa en 2 si el valor es mayor o igual a 2
+      } else {
+        newValue = lastValue - 1; // Decrementa en 1 si el valor es menor a 2
+      }
+      setLastValue(newValue);
+
       const newDataPoint = {
         time: formattedDate,
-        value: numericValue,
+        value: newValue,
       };
 
       // Actualizar los datos ordenadamente
@@ -36,11 +47,14 @@ function App() {
   return (
     <div className="app">
       <div className="app__central">
-        <ChartComponent data={data}></ChartComponent>
+        <ChartComponent data={data} />
       </div>
       <div className="add">
         <Add handleNewPercentage={handleNewPercentage} />
       </div>
+      {/* <div>
+        <PercentageList />
+      </div> */}
     </div>
   );
 }
