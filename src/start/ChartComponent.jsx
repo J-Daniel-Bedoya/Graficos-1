@@ -1,75 +1,73 @@
 import React, { useEffect, useRef } from "react";
-import { createChart, ColorType } from "lightweight-charts";
+import * as echarts from "echarts/core";
+import { GridComponent, TooltipComponent } from "echarts/components";
+import { LineChart } from "echarts/charts";
+import "echarts-liquidfill";
 
-const ChartComponent = ({ data, colors = {} }) => {
+// Registra los componentes necesarios
+echarts.use([GridComponent, TooltipComponent, LineChart]);
+
+const ChartComponent = ({ data, colors = {}, height = 400 }) => {
   const {
     backgroundColor = "#000",
     textColor = "#fff",
-    areaTopColor = "#00e988",
-    areaBottomColor = "#2962ff47",
+    lineColor = "#2962FF",
+    pointColorLow = "#00FF00",
+    pointColorHigh = "#800080",
   } = colors;
 
   const chartContainerRef = useRef();
 
   useEffect(() => {
-    const handleResize = () => {
-      chart.applyOptions({ width: chartContainerRef.current.clientWidth });
-    };
+    const chart = echarts.init(chartContainerRef.current);
 
-    const chart = createChart(chartContainerRef.current, {
-      layout: {
-        background: { type: ColorType.Solid, color: backgroundColor },
-        textColor,
+    chart.setOption({
+      backgroundColor,
+      textStyle: {
+        color: textColor,
       },
-      width: chartContainerRef.current.clientWidth,
-      height: 300,
-      rightPriceScale: {
-        visible: false, // Oculta el eje Y derecho
-      },
-      leftPriceScale: {
-        visible: false, // Oculta el eje Y izquierdo
-      },
-      grid: {
-        vertLines: {
-          visible: true,
-        },
-        horzLines: {
-          visible: false,
-          color: "#1775d3", // Color de las líneas horizontales
+      xAxis: {
+        type: "category",
+        data: data.map((item) => item.time),
+        axisLabel: {
+          show: false, // Oculta los valores en el eje x
         },
       },
+      yAxis: {
+        type: "value",
+        axisLabel: {
+          show: false, // Oculta los valores en el eje y
+        },
+      },
+      series: [
+        {
+          type: "line",
+          data: data.map((item) => ({
+            value: item.value,
+            itemStyle: {
+              color: item.value < 2 ? pointColorLow : pointColorHigh,
+            },
+          })),
+          lineStyle: {
+            color: lineColor,
+          },
+        },
+      ],
     });
-    chart.timeScale().fitContent();
-
-    const series = chart.addAreaSeries({
-      topColor: areaTopColor,
-      bottomColor: areaBottomColor,
-    });
-
-    series.setData(
-      data.map((point) => ({ time: point.time, value: point.value })),
-      {
-        priceLineColor: (index, point) => {
-          if (point.value < 2) {
-            return "blue"; // Color azul si es menos de 2
-          } else if (point.value >= 2) {
-            return "violet"; // Color violeta si es más de 10
-          } else {
-            return "purple"; // Color morado para otros valores
-          }
-        },
-      }
-    );
-
-    window.addEventListener("resize", handleResize);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      chart.remove();
+      chart.dispose();
     };
-  }, [data, backgroundColor, textColor]);
+  }, [
+    data,
+    backgroundColor,
+    textColor,
+    lineColor,
+    pointColorLow,
+    pointColorHigh,
+  ]);
 
-  return <div ref={chartContainerRef} />;
+  return <div ref={chartContainerRef} style={{ width: "100%", height }} />;
 };
 
 export default ChartComponent;
